@@ -3,6 +3,8 @@ package cases_test
 import (
 	"context"
 	"os"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -77,4 +79,40 @@ func TestKeysetWithoutTiebreakerLosesRows(t *testing.T) {
 	if !r.Bool["row_compare_in_index_cond"] {
 		t.Fatalf("the row comparison should be an index condition: %+v", r.Facts)
 	}
+}
+
+// The README shows one run's output. Timings, page counts and ratios vary by
+// machine and PostgreSQL version and are masked; every other token — row
+// counts, rows removed, rows lost, which index each plan used — must match a
+// run of the current code, so the README cannot keep describing old behaviour.
+func TestReadmeOutputMatchesARun(t *testing.T) {
+	b, err := os.ReadFile("../README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	readme := string(b)
+	start := strings.Index(readme, "## Output")
+	start += strings.Index(readme[start:], "```\n") + 4
+	end := start + strings.Index(readme[start:], "```")
+	block := readme[start:end]
+	block = block[strings.Index(block, "\n\n")+2:] // drop the version header
+
+	conn := connect(t)
+	var got []string
+	for _, c := range cases.All {
+		r, err := c.Run(context.Background(), conn, scale)
+		if err != nil {
+			t.Fatalf("%s: %v", c.Name, err)
+		}
+		got = append(got, cases.Format(c.Name, r))
+	}
+	if want, have := mask(block), mask(strings.Join(got, "\n")); want != have {
+		t.Errorf("README output is stale.\n--- README (masked)\n%s\n--- this run (masked)\n%s", want, have)
+	}
+}
+
+var volatile = regexp.MustCompile(`\d+(\.\d+)? (ms|buffers|kB|MB)\b|\d+(\.\d+)?x\b`)
+
+func mask(s string) string {
+	return strings.TrimSpace(volatile.ReplaceAllString(s, "#"))
 }

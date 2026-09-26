@@ -6,6 +6,7 @@ package cases
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -32,6 +33,17 @@ type Fact struct {
 
 func (r *Result) add(label, format string, args ...any) {
 	r.Facts = append(r.Facts, Fact{label, fmt.Sprintf(format, args...)})
+}
+
+// Format renders one case's result as `pgplan` prints it and the README shows it.
+func Format(name string, r Result) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "%s\n", name)
+	for _, f := range r.Facts {
+		fmt.Fprintf(&b, "  %-28s %s\n", f.Label, f.Value)
+	}
+	fmt.Fprintf(&b, "  → %s\n", r.Summary)
+	return b.String()
 }
 
 // Case is one runnable case.

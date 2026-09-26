@@ -28,21 +28,20 @@ func main() {
 	}
 	defer conn.Close(ctx)
 	var version string
-	_ = conn.QueryRow(ctx, "SHOW server_version").Scan(&version)
+	if err := conn.QueryRow(ctx, "SHOW server_version").Scan(&version); err != nil {
+		fmt.Fprintln(os.Stderr, "server_version:", err)
+		os.Exit(1)
+	}
 	fmt.Printf("PostgreSQL %s · scale %d\n", version, *scale)
 	failed := false
 	for _, c := range cases.All {
 		r, err := c.Run(ctx, conn, *scale)
-		fmt.Printf("\n%s\n", c.Name)
 		if err != nil {
-			fmt.Println("  error:", err)
+			fmt.Printf("\n%s\n  error: %v\n", c.Name, err)
 			failed = true
 			continue
 		}
-		for _, f := range r.Facts {
-			fmt.Printf("  %-28s %s\n", f.Label, f.Value)
-		}
-		fmt.Println("  →", r.Summary)
+		fmt.Printf("\n%s", cases.Format(c.Name, r))
 	}
 	if failed {
 		os.Exit(1)

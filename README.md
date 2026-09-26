@@ -15,8 +15,10 @@ CI runs the cases against PostgreSQL 15, 16 and 17.
 
 ## Output
 
-One run on a laptop. Row counts and buffers are deterministic; milliseconds are
-not, and are here only for scale.
+One run on a laptop. Milliseconds, page counts and ratios vary by machine and
+version and are here only for scale. Everything else in this block is checked
+against a fresh run by `TestReadmeOutputMatchesARun`, so it cannot describe
+old behaviour.
 
 ```
 PostgreSQL 16.14 (Homebrew) · scale 1000
