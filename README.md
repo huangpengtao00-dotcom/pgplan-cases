@@ -96,3 +96,7 @@ A missing `PGPLAN_DSN` fails the tests instead of skipping them.
 ## License
 
 MIT
+
+---
+
+More context: [opallagent.com/](https://opallagent.com/) — Notes on agent loops, evaluation evidence, and boundary statements.
